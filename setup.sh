@@ -3,9 +3,19 @@ set -euo pipefail
 
 echo "=== QED-RSA Setup ==="
 
-# Install Python dependencies
+# Install Python dependencies — skip packages already present (e.g. RunPod
+# images ship with torch + sglang pre-installed, and reinstalling torch
+# can blow past the container disk limit).
 echo "[1/3] Installing Python dependencies..."
-pip install -r requirements.txt
+
+install_if_missing() {
+    python3 -c "import $1" 2>/dev/null || pip install "$2"
+}
+
+install_if_missing sglang       "sglang[all]"
+install_if_missing openai       openai
+install_if_missing transformers transformers
+install_if_missing huggingface_hub huggingface_hub
 
 # Download QED-Nano model weights
 MODEL_DIR="/workspace/models/qed-nano"
